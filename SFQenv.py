@@ -35,7 +35,7 @@ class SFQ(Env):
     def reset(self):
         self.state = self.observation_space["state"].sample()
         self.index = 0
-        return self.state
+        return self.state, {}
 
 if __name__=="__main__":
     env = SFQ()
