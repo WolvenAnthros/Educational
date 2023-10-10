@@ -14,6 +14,8 @@ from util import get_gym_env_info
 from running_mean_std import RunningMeanStd, apply_normalizer
 from tracker import WandBTracker, ConsoleTracker
 
+from SFQenv import SFQ
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--name')
@@ -24,7 +26,7 @@ if __name__ == "__main__":
     parser.add_argument('--epsilon', default=.1, type=float)
     parser.add_argument('--value_loss_coef', default=.5, type=float)
     parser.add_argument('--entropy_coef', default=.01, type=float)
-    parser.add_argument('--num_workers', default=20, type=int)
+    parser.add_argument('--num_workers', default=4, type=int)
     parser.add_argument('--num_iterations', default=10 ** 10, type=int)
     parser.add_argument('--num_steps', default=128, type=int)
     parser.add_argument('--ppo_epochs', default=4, type=int)
@@ -37,8 +39,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     args.batch_size = int(args.num_workers / args.num_batches)
-    args.num_actions, args.obs_shape, args.num_obs, action_type = \
-        get_gym_env_info(args.env_name)
+    # args.num_actions, args.obs_shape, args.num_obs, action_type = \
+    #     get_gym_env_info(args.env_name)
+    args.num_actions, args.obs_shape, args.num_obs, action_type = 3, (125,), 125, 'discrete'
     device = torch.device(args.device)
 
     # Define common shapes for convenience

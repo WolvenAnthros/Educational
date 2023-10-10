@@ -5,7 +5,7 @@ import gym
 import numpy as np
 import torch
 from torchvision import transforms
-
+from SFQenv import SFQ
 from running_mean_std import apply_normalizer
 
 class GamePlayer:
@@ -84,7 +84,8 @@ class SubprocWorker:
         self.args = args
         self.shared_obs = shared_obs
 
-        self.env = gym.make(args.env_name)
+        # self.env = gym.make(args.env_name)
+        self.env = SFQ()
         self.env.reset()
 
         # Data preprocessing for raw Atari frames

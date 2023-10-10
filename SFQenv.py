@@ -22,7 +22,7 @@ class SFQ(Env):
 
         self.index += 1
 
-        reward = None
+        reward = 1
 
         done = False
         if self.index >= max_sequence_length:
