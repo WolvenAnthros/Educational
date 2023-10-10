@@ -8,7 +8,7 @@ max_sequence_length = 125
 class SFQ(Env):
     def __init__(self):
         self.observation_space = Dict({
-            "state": Box(low=np.ones(125) * 3, high=np.ones(125) * 3, dtype=int),
+            "state": Box(low=np.zeros(125) * 3, high=np.zeros(125) * 3, dtype=int),
             "index": Box(low=np.array([0]), high=np.array([max_sequence_length]),dtype=int) })
 
         self.action_space = Discrete(3)
@@ -35,14 +35,15 @@ class SFQ(Env):
     def reset(self):
         self.state = self.observation_space["state"].sample()
         self.index = 0
+        return self.state
 
+if __name__=="__main__":
+    env = SFQ()
+    #print(env.state)
+    for _ in range(max_sequence_length):
+        action = env.action_space.sample()
+        state,_,done,_=env.step(action)
+        if done:
+            print("Done!",state,env.index)
 
-env = SFQ()
-#print(env.state)
-for _ in range(max_sequence_length):
-    action = env.action_space.sample()
-    env.step(action)
-print(env.state)
-print(env.index)
-
-example = Discrete(3)
+    print(env.reset())
