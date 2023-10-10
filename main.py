@@ -35,7 +35,7 @@ if __name__ == "__main__":
     parser.add_argument('--device', default="cpu")
     parser.add_argument('--end_on_life_loss', default=False)
     parser.add_argument('--clip_rewards', default=False)
-    parser.add_argument('--logger', default="console")
+    parser.add_argument('--logger', default="wandb")
     args = parser.parse_args()
 
     args.batch_size = int(args.num_workers / args.num_batches)
