@@ -1,9 +1,8 @@
 from gym import Env
 import numpy as np
 from gym.spaces import Discrete, Box, Dict
-
+from SFQ_calc import reward_calculation
 max_sequence_length = 125
-
 
 class SFQ(Env):
     def __init__(self):
@@ -22,7 +21,7 @@ class SFQ(Env):
 
         self.index += 1
 
-        reward = 1
+        reward = reward_calculation(self.state)
 
         done = False
         if self.index >= max_sequence_length:
