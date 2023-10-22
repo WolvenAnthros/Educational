@@ -84,8 +84,8 @@ class SubprocWorker:
         self.args = args
         self.shared_obs = shared_obs
 
-        # self.env = gym.make(args.env_name)
-        self.env = SFQ()
+        self.env = gym.make(args.env_name)
+        # self.env = SFQ()
         self.env.reset()
 
         # Data preprocessing for raw Atari frames
