@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import complex128
-from args import args
+from Educational.args import args
 from numpy.linalg import inv
 from numba import njit
 # from scipy import optimize

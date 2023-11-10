@@ -1,7 +1,7 @@
 from gymnasium import Env
 import numpy as np
 from gymnasium.spaces import Discrete, Box, Dict
-from SFQ_calc import reward_calculation
+from Educational.SFQ_calc import reward_calculation
 
 max_sequence_length = 125
 
@@ -15,7 +15,8 @@ class SFQ(Env):
 
         # self.state = self.observation_space["state"].sample()
         # self.state = self.observation_space.sample()
-        self.state = np.zeros(max_sequence_length, dtype=int)
+        self. initial_state = np.zeros(max_sequence_length, dtype=int)
+        self.state = self.initial_state.copy()
         self.index = 0  # self.observation_space["index"]
         self.fidelity = 0
 
@@ -28,11 +29,11 @@ class SFQ(Env):
         self.index += 1
 
 
-        self.true_fidelity = reward_calculation(self.state)
+        #self.true_fidelity = reward_calculation(self.state)
 
         done = False
         if self.index >= max_sequence_length:
-            self.fidelity = reward_calculation(self.state) * 10 - 6
+            self.fidelity = reward_calculation(self.state) * 100 - 60
             done = True
         info = {}
 
@@ -47,7 +48,7 @@ class SFQ(Env):
     def reset(self, seed=None, options=None):
         super().reset(seed=seed)
         # self.state = self.observation_space["state"].sample()
-        self.state = np.zeros(max_sequence_length, dtype=int)
+        self.state = self.initial_state.copy()
         self.index = 0
         self.fidelity = 0
         return self.state, {}
