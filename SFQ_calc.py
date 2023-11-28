@@ -1,6 +1,6 @@
 import numpy as np
 from numpy import complex128
-from Educational.args import args
+from args import args
 from numpy.linalg import inv
 from numba import njit
 # from scipy import optimize
@@ -84,17 +84,24 @@ alpha_state_list = np.array([AlphaState(dimensions, i).matrix for i in range(1, 
 u_t_plus, u_t_minus, u_t_zero = U(1).matrix, U(-1).matrix, U(0).matrix
 
 
+# TODO: переделать вход с pulse list на U - матрицу епты!
+# TODO: а что с нормой матрицы делать? а ничего! мы ж стейт меняем по записи а не сами записываем правила как формировать его, начальный выберем единичным
+# np.concatenate((u_matrix.real.flatten(), u_matrix.imag.flatten()))
+# u_matrix -> flatten Re, Im representation
+
+# for pulse in pulse_list:
+#     if pulse == 1:
+#         u_matrix = u_t_plus @ u_matrix
+#     elif pulse == -1:
+#         u_matrix = u_t_minus @ u_matrix
+#     elif pulse == 0:
+#         u_matrix = u_t_zero @ u_matrix
+
 @njit(fastmath=True)
-def reward_calculation(pulse_list):
+def reward_calculation(input_state_matrix):
     fidelity = 0
-    u_matrix = identity_matrix
-    for pulse in pulse_list:
-        if pulse == 1:
-            u_matrix = u_t_plus @ u_matrix
-        elif pulse == -1:
-            u_matrix = u_t_minus @ u_matrix
-        elif pulse == 0:
-            u_matrix = u_t_zero @ u_matrix
+    u_matrix = input_state_matrix
+
     for alpha_state in alpha_state_list:
         ket = u_matrix @ alpha_state
         r_ket = Y @ alpha_state
@@ -113,7 +120,6 @@ def umatrix_calculation(pulse_list):
         elif pulse == 0:
             u_matrix = u_t_zero @ u_matrix
     return u_matrix
-
 
 def wait_calculation(num_timesteps, _u_matrix, ):
     matrices_list = []
