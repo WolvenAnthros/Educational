@@ -70,7 +70,7 @@ class SFQ(Env):
         self.state = self.initial_state.copy()
         self.index = 0
         self.fidelity = 0
-        return self.reshape_state(self.state), {}
+        return self.reshape_state(), {}
 
 
 if __name__ == "__main__":
