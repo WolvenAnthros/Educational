@@ -2,9 +2,9 @@ import numpy as np
 from numpy import complex128
 from args import args
 from numpy.linalg import inv
-from numba import njit
-# from scipy import optimize
-# import matplotlib.pyplot as plt
+import jax.numpy as jnp
+import jax.lax as lax
+from jax import grad, jit, vmap
 
 config = args['qbit_simulation_config']
 
@@ -25,7 +25,7 @@ identity_matrix = np.identity(dimensions, dtype=np.complex128)  # identity
 v = f0 / pulse_time  # voltage
 c_c = theta / (f0 * np.sqrt(2 * omega_01 / (h * c1)))  # connection capacity
 amp = c_c * v * np.sqrt(h * omega_01 / (2 * c1))  # pulse amp
-#print(f'Pulse amplitude: {amp:.3e}')
+# print(f'Pulse amplitude: {amp:.3e}')
 # hamiltonians
 H0 = np.array([[0, 0, 0], [0, h * omega_01, 0], [0, 0, h * omega_01 + h * mu]], dtype=np.complex128)
 eigenenergy, eigenpsi = np.linalg.eig(H0)
@@ -42,7 +42,8 @@ class U:
     zero_pulse = zero_enumerator @ zero_denominator
     pulse_counts = int(pulse_time / tstep)
     empty_counts = int((pulse_period - pulse_time) / tstep)
-    #print(f'Pulse counts: {pulse_counts}, empty counts: {empty_counts}')
+
+    # print(f'Pulse counts: {pulse_counts}, empty counts: {empty_counts}')
 
     def __init__(self, pulse: int):
         Hr_pulse = pulse * 1j * amp * U.Hmatrix + H0
@@ -84,8 +85,6 @@ alpha_state_list = np.array([AlphaState(dimensions, i).matrix for i in range(1, 
 u_t_plus, u_t_minus, u_t_zero = U(1).matrix, U(-1).matrix, U(0).matrix
 
 
-# TODO: переделать вход с pulse list на U - матрицу епты!
-# TODO: а что с нормой матрицы делать? а ничего! мы ж стейт меняем по записи а не сами записываем правила как формировать его, начальный выберем единичным
 # np.concatenate((u_matrix.real.flatten(), u_matrix.imag.flatten()))
 # u_matrix -> flatten Re, Im representation
 
@@ -97,10 +96,27 @@ u_t_plus, u_t_minus, u_t_zero = U(1).matrix, U(-1).matrix, U(0).matrix
 #     elif pulse == 0:
 #         u_matrix = u_t_zero @ u_matrix
 
-@njit(fastmath=True)
+# @jit
+# def reward_calculation(input_state_matrix):
+#     fidelity = 0
+#     u_matrix = jnp.array(input_state_matrix)
+#
+#     def iterate(u_matrix, alpha_state):
+#         nonlocal fidelity
+#         ket = jnp.dot(u_matrix, alpha_state)
+#         r_ket = jnp.dot(Y, alpha_state)
+#         inner = jnp.dot(r_ket.conj().T, ket)
+#         fidelity += jnp.abs(inner.at[0,0].get()) ** 2
+#
+#         return u_matrix, fidelity
+#
+#     (_, fidelity) = lax.scan(iterate, u_matrix, alpha_state_list)
+#     return jnp.sum(fidelity) / 6
+
+
 def reward_calculation(input_state_matrix):
     fidelity = 0
-    u_matrix = input_state_matrix
+    u_matrix = np.array(input_state_matrix)
 
     for alpha_state in alpha_state_list:
         ket = u_matrix @ alpha_state
@@ -108,7 +124,6 @@ def reward_calculation(input_state_matrix):
         inner = r_ket.conj().T @ ket
         fidelity = fidelity + np.abs(inner[0][0]) ** 2
     return fidelity / 6
-
 
 def umatrix_calculation(pulse_list):
     u_matrix = identity_matrix
@@ -120,6 +135,7 @@ def umatrix_calculation(pulse_list):
         elif pulse == 0:
             u_matrix = u_t_zero @ u_matrix
     return u_matrix
+
 
 def wait_calculation(num_timesteps, _u_matrix, ):
     matrices_list = []
@@ -156,7 +172,7 @@ if __name__ == "__main__":
     pulse_str = config['example_scallop']
     pulse_str = '1110-1-1-1-11110-1-1-1-11100-1-1-1111110-1-111111-1-1-1-11111-1-1-101111-1-1-1-1-11111-1-1-1-10111-1-10-10111-1-1-1-1-111111-1-1-111-110-1-1-1-1011-1-1-10111110-1011111-1-1-1-111'
     # 3 GHz
-    #pulse_str = "1.  1.  1.  1. -1. -1. -1.  1.  1.  1.  1. -1.  0. -1.  0.  1.  1.  1.  1.  0.  0. -1. -1.  0.  1.  1.  1. -1. -1. -1. -1.  0. -1.  1.  1.  1.-1. -1. -1. -1.  1.  1.  1.  1. -1. -1. -1. -1.  1.  1.  1.  0.  1. -1. -1. -1.  1.  1.  1.  1.  0. -1. -1. -1. -1.  0.  1.  1.  1. -1. -1. -1.-1. -1.  1.  1.  1.  0. -1. -1. -1.  0.  1.  1.  1.  1. -1. -1. -1. -1.-1.  1.  1.  1.  1. -1. -1.  0.  1.  1.  1.  1. -1. -1. -1.  0. -1.  0.1.  0. -1. -1. -1.  0.  0.  0.  1.  0.  0. -1.  0. -1. -1.  1.  1."
+    # pulse_str = "1.  1.  1.  1. -1. -1. -1.  1.  1.  1.  1. -1.  0. -1.  0.  1.  1.  1.  1.  0.  0. -1. -1.  0.  1.  1.  1. -1. -1. -1. -1.  0. -1.  1.  1.  1.-1. -1. -1. -1.  1.  1.  1.  1. -1. -1. -1. -1.  1.  1.  1.  0.  1. -1. -1. -1.  1.  1.  1.  1.  0. -1. -1. -1. -1.  0.  1.  1.  1. -1. -1. -1.-1. -1.  1.  1.  1.  0. -1. -1. -1.  0.  1.  1.  1.  1. -1. -1. -1. -1.-1.  1.  1.  1.  1. -1. -1.  0.  1.  1.  1.  1. -1. -1. -1.  0. -1.  0.1.  0. -1. -1. -1.  0.  0.  0.  1.  0.  0. -1.  0. -1. -1.  1.  1."
     # 4 Ghz
     # pulse_str = "1.  1.  1. -1. -1.  1.  1.  1.  1.  0.  0.  0.  1.  1.  1.  0.  0. -1.1.  1.  1. -1. -1. -1.  1.  1.  1. -1. -1. -1.  1.  1.  1.  1. -1. -1.0.  1.  0. -1. -1. -1.  -1.  1.  1. -1. -1. -1. -1.  1.  1.  0. -1. -1.                                 -1.  0.  1.  0. -1. -1. -1.  0.  1.  1. -1. -1. -1. -1.  1.  1.  1. -1.                            -1.  0.  1.  1.  1.  0. -1. -1.  1.  1.  1.  1. -1. -1. -1.  0.  1.  1.                            0. -1. -1.  1.  1. -1.  0. -1.  0.  1.  1.  0.  0. -1. -1.  1.  1.  1.                            -1. -1. -1.  1.  1.  1.  0. -1.  0.  1.  1.  1. -1. -1. -1. -1.  1."
     # 5 Ghz
@@ -174,36 +190,36 @@ if __name__ == "__main__":
     # # 5 GHz, mu 0.3 GHz
     # pulse_str = " 1.  1. -1. -1.  1.  1.  1.  0. -1. -1.  1.  1.  1. -1.  1.  1.  0. -1. -1.  1.  1.  1. -1. -1.  0.  1.  0.  0.  0.  1.  1.  0. -1. -1.  1.  1.  0. -1. -1.  1.  1.  1. -1. -1.  1.  1.  1. -1. -1.  1.  1.  1. -1. -1. 1.  1.  1. -1. -1.  0.  1.  0. -1. -1.  1.  1.  0.  0. -1.  1.  1.  1. -1. -1.  1.  1.  1. -1. -1.  1.  1.  1. -1. -1. -1.  0.  0. -1.  0.  0.  1.  0. -1. -1.  0.  1.  1. -1. -1.  1.  1.  0. -1. -1.  0.  1.  1. -1. -1.  0.  1.  1.  0. -1.  1.  1.  0.  0.  1.  1.  1. -1. -1. -1.  1."
     # 3 GHz, theta 0.032
-    #pulse_str = "1.  0.  1.  1. -1. -1. -1.  1.  1.  1. -1. -1. -1. -1.  0. -1.  0.  1. 1.  0. -1. -1. -1.  0.  0. -1.  1.  0.  1. -1.  0.  1.  0.  1.  1.  0. -1. -1. -1.  0. -1.  1.  1.  0. -1. -1. -1.  0.  0.  1.  1.  1.  0. -1. -1.  0.  0.  0.  1.  1.  0. -1. -1.  0. -1.  1.  1.  0.  1.  0. -1. -1. -1.  0.  0.  0.  1.  0. -1. -1. -1. -1.  0.  1.  1.  0.  0. -1. -1. -1.  0.  1. -1.  1. -1.  0.  1. -1.  0.  0.  1.  1.  1. -1. -1. -1.  0.  1.  1.  1. -1. -1. -1. -1.  1.  0.  0.  1.  0. -1. -1. -1. -1.  1.  1."
+    # pulse_str = "1.  0.  1.  1. -1. -1. -1.  1.  1.  1. -1. -1. -1. -1.  0. -1.  0.  1. 1.  0. -1. -1. -1.  0.  0. -1.  1.  0.  1. -1.  0.  1.  0.  1.  1.  0. -1. -1. -1.  0. -1.  1.  1.  0. -1. -1. -1.  0.  0.  1.  1.  1.  0. -1. -1.  0.  0.  0.  1.  1.  0. -1. -1.  0. -1.  1.  1.  0.  1.  0. -1. -1. -1.  0.  0.  0.  1.  0. -1. -1. -1. -1.  0.  1.  1.  0.  0. -1. -1. -1.  0.  1. -1.  1. -1.  0.  1. -1.  0.  0.  1.  1.  1. -1. -1. -1.  0.  1.  1.  1. -1. -1. -1. -1.  1.  0.  0.  1.  0. -1. -1. -1. -1.  1.  1."
     # 5 GHz, gen 30 GHz
-    #pulse_str = "1. -1. -1. -1.  1.  1.  1. -1. -1. -1.  0.  1.  1. -1. -1.  1.  0.  1.  1. -1. -1. -1. -1.  1.  1. -1. -1. -1. -1.  1.  1. -1. -1.  0.  0.  1.  1.  0. -1. -1.  1.  1.  1.  0. -1. -1.  1.  1.  1.  0. -1. -1.  1.  0.  1. -1. -1. -1.  1.  1.  1.  0. -1. -1.  0.  1.  1.  1. -1. -1. -1.  1.  1.  1. -1. -1.  0.  1.  1.  1. -1. -1.  0.  1.  1.  0. -1. -1.  0.  1.  1.  1. -1. -1.  0.  1.  1.  0. -1. -1.  0.  1.  1.  1. -1. -1.  1.  1.  1.  1. -1. -1.  0.  1.  1.  1. -1. -1. -1.  1.  1.  1. -1. -1.  0."
+    # pulse_str = "1. -1. -1. -1.  1.  1.  1. -1. -1. -1.  0.  1.  1. -1. -1.  1.  0.  1.  1. -1. -1. -1. -1.  1.  1. -1. -1. -1. -1.  1.  1. -1. -1.  0.  0.  1.  1.  0. -1. -1.  1.  1.  1.  0. -1. -1.  1.  1.  1.  0. -1. -1.  1.  0.  1. -1. -1. -1.  1.  1.  1.  0. -1. -1.  0.  1.  1.  1. -1. -1. -1.  1.  1.  1. -1. -1.  0.  1.  1.  1. -1. -1.  0.  1.  1.  0. -1. -1.  0.  1.  1.  1. -1. -1.  0.  1.  1.  0. -1. -1.  0.  1.  1.  1. -1. -1.  1.  1.  1.  1. -1. -1.  0.  1.  1.  1. -1. -1. -1.  1.  1.  1. -1. -1.  0."
     pulse_str = pulse_str.replace('1', '1,')
     pulse_str = pulse_str.replace('0', '0,')
-    pulse_str = pulse_str.replace('.','')
+    pulse_str = pulse_str.replace('.', '')
     pulse_list = pulse_str.split(',')
     pulse_list.pop(-1)
     pulse_list = [int(pulse) for pulse in pulse_list]
 
     u_matrix = umatrix_calculation(pulse_list)
+    if __name__ == "__main__":
+        time_list = np.linspace(1, int(1e2), int(1e5), dtype=int)
 
-    time_list = np.linspace(1, int(1e2), int(1e5), dtype=int)
+        # time_tick = time_list[np.argmax(wait_calculation(_u_matrix=u_matrix, num_timesteps=time_list))]
 
-    # time_tick = time_list[np.argmax(wait_calculation(_u_matrix=u_matrix, num_timesteps=time_list))]
-
-    # time_tick = optimize.fmin(func=wait_calculation, x0=[10], params=(u_matrix,))
-    # print(
-    #     f'time ticks needed: {time_tick}, fidelity: {wait_calculation(_u_matrix=u_matrix, num_timesteps=[time_tick])}')
-    # plt.plot(time_list * config['num_timesteps'] * 1e6, wait_calculation(time_list, u_matrix))
-    # plt.show()
-    # print(Y)
-    # trunc = 0
-    # for i in range(1, 5):
-    #     temp_reward = reward_calculation(pulse_list[:-i])
-    #     if temp_reward > reward:
-    #         trunc = i
-    #         reward = temp_reward
-    # print(f'Fidelity: {reward:.3g}, Infidelity: {1 - reward:.2e}, truncate {trunc} symbols for the best result')
-    print(reward_calculation(pulse_list))
-    pulse_str = pulse_str.replace(',','')
-    pulse_str = pulse_str.replace(' ', '')
-    print(pulse_str)
+        # time_tick = optimize.fmin(func=wait_calculation, x0=[10], params=(u_matrix,))
+        # print(
+        #     f'time ticks needed: {time_tick}, fidelity: {wait_calculation(_u_matrix=u_matrix, num_timesteps=[time_tick])}')
+        # plt.plot(time_list * config['num_timesteps'] * 1e6, wait_calculation(time_list, u_matrix))
+        # plt.show()
+        # print(Y)
+        # trunc = 0
+        # for i in range(1, 5):
+        #     temp_reward = reward_calculation(pulse_list[:-i])
+        #     if temp_reward > reward:
+        #         trunc = i
+        #         reward = temp_reward
+        # print(f'Fidelity: {reward:.3g}, Infidelity: {1 - reward:.2e}, truncate {trunc} symbols for the best result')
+        print(reward_calculation(u_matrix))
+        pulse_str = pulse_str.replace(',', '')
+        pulse_str = pulse_str.replace(' ', '')
+        print(pulse_str)

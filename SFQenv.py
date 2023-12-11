@@ -18,7 +18,8 @@ class SFQ(Env):
         self.state = self.initial_state.copy()
         self.index = 0
         self.fidelity = 0
-        self.action_history = []
+        self.seed = None
+        # self.action_history = []
 
     def _get_obs(self):
         return np.concatenate((self.state.real.flatten(), self.state.imag.flatten()))
@@ -36,7 +37,7 @@ class SFQ(Env):
             self.state @= u_t_zero
 
         self.index += 1
-        self.action_history.append(pulse)
+        # self.action_history.append(pulse)
         #  * 100 - 60
         reward_ = reward_calculation(self.state)
         self.fidelity = reward_ - self.fidelity
@@ -45,7 +46,7 @@ class SFQ(Env):
             # self.fidelity = (self.fidelity - 0.5)/(1-0.5)
 
             done = True
-        info = {'fidelity': reward_}
+        info = {'fidelity': f'{reward_}'}
         reward = self.fidelity
 
         return self.reshape_state(), reward, done, False, info
@@ -59,7 +60,6 @@ class SFQ(Env):
     def reshape_state(self):
         '''
         Reshapes complex-value multi-dimensional array into one-dimensional array of [Re(matrix),Im(matrix)]
-        :param matrix: input matrix
         :return: 1D float array
         '''
         # assert np.shape(self.state)[0] == dimensions

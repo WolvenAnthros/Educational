@@ -15,7 +15,7 @@ class QMLEnv(Env):
         self.target_state = target_state
         self.max_circuit_length = 14
 
-        self.backend = BasicAer.get_backend('statevector_simulator') # TODO: fix code repeating
+        self.backend = BasicAer.get_backend('statevector_simulator')
         self.register = QuantumRegister(self.num_qubits)
         self.qc = QuantumCircuit(self.register)
 
@@ -96,7 +96,6 @@ class QMLEnv(Env):
     def get_flattened_state(self):
         '''
         Reshapes complex-value multi-dimensional array into one-dimensional array of [Re(matrix),Im(matrix)]
-        :param matrix: input matrix
         :return: 1D float array
         '''
         return np.concatenate((self.state.real.flatten(), self.state.imag.flatten()))

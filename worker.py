@@ -136,7 +136,7 @@ class SubprocWorker:
             # really is over)
             if self.args.end_on_life_loss:
                 lives = self.env.ale.lives()
-                if (self.previous_lives > lives and lives > 0):
+                if (self.previous_lives > lives > 0):
                     # We died
                     fake_done = True
                 self.previous_lives = lives
