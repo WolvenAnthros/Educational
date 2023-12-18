@@ -2,9 +2,9 @@ import numpy as np
 from numpy import complex128
 from args import args
 from numpy.linalg import inv
-import jax.numpy as jnp
-import jax.lax as lax
-from jax import grad, jit, vmap
+# import jax.numpy as jnp
+# import jax.lax as lax
+# from jax import grad, jit, vmap
 
 config = args['qbit_simulation_config']
 
@@ -129,11 +129,11 @@ def umatrix_calculation(pulse_list):
     u_matrix = identity_matrix
     for pulse in pulse_list:
         if pulse == 1:
-            u_matrix = u_t_plus @ u_matrix
+            u_matrix =  u_matrix @ u_t_plus
         elif pulse == -1:
-            u_matrix = u_t_minus @ u_matrix
+            u_matrix =  u_matrix  @ u_t_minus
         elif pulse == 0:
-            u_matrix = u_t_zero @ u_matrix
+            u_matrix = u_matrix  @ u_t_zero
     return u_matrix
 
 
@@ -171,6 +171,7 @@ def wait_calculation(num_timesteps, _u_matrix, ):
 if __name__ == "__main__":
     pulse_str = config['example_scallop']
     pulse_str = '1110-1-1-1-11110-1-1-1-11100-1-1-1111110-1-111111-1-1-1-11111-1-1-101111-1-1-1-1-11111-1-1-1-10111-1-10-10111-1-1-1-1-111111-1-1-111-110-1-1-1-1011-1-1-10111110-1011111-1-1-1-111'
+    pulse_str = '11-1-10-1-11111-1-1-1-1111-1-1-1011111-1-1-1-11111-1-1-101111-1-1-1-10111-1-1-1-1011100-1-1-111110-1-1-101111-1-1-101111-1-1-1-1-11110-10011111-1-10-1111-1-1-10011111-100111'
     # 3 GHz
     # pulse_str = "1.  1.  1.  1. -1. -1. -1.  1.  1.  1.  1. -1.  0. -1.  0.  1.  1.  1.  1.  0.  0. -1. -1.  0.  1.  1.  1. -1. -1. -1. -1.  0. -1.  1.  1.  1.-1. -1. -1. -1.  1.  1.  1.  1. -1. -1. -1. -1.  1.  1.  1.  0.  1. -1. -1. -1.  1.  1.  1.  1.  0. -1. -1. -1. -1.  0.  1.  1.  1. -1. -1. -1.-1. -1.  1.  1.  1.  0. -1. -1. -1.  0.  1.  1.  1.  1. -1. -1. -1. -1.-1.  1.  1.  1.  1. -1. -1.  0.  1.  1.  1.  1. -1. -1. -1.  0. -1.  0.1.  0. -1. -1. -1.  0.  0.  0.  1.  0.  0. -1.  0. -1. -1.  1.  1."
     # 4 Ghz

@@ -13,11 +13,12 @@ class SFQ(Env):
 
         self.action_space = Discrete(3)
 
-        # self.initial_state = np.zeros(max_sequence_length, dtype=int)
+        # self.initial_state = np.zeros(max_sequence_length, dtype=int)pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
         self.initial_state = identity_matrix
         self.state = self.initial_state.copy()
         self.index = 0
         self.fidelity = 0
+        self.reward_old = 0
         self.seed = None
         # self.action_history = []
 
@@ -30,24 +31,25 @@ class SFQ(Env):
         pulse = action - 1
 
         if pulse == 1:
-            self.state @= u_t_plus
+            self.state = self.state @ u_t_plus
         elif pulse == -1:
-            self.state @= u_t_minus
+            self.state = self.state @ u_t_minus
         elif pulse == 0:
-            self.state @= u_t_zero
+            self.state = self.state @ u_t_zero
 
         self.index += 1
-        # self.action_history.append(pulse)
-        #  * 100 - 60
-        reward_ = reward_calculation(self.state)
-        self.fidelity = reward_ - self.fidelity
+
+        self.fidelity = reward_calculation(self.state)
+        log_reward = (self.fidelity - np.log(1-self.fidelity)) ** 2
+        reward = log_reward - self.reward_old
+
         done = False
         if self.index >= max_sequence_length:
-            # self.fidelity = (self.fidelity - 0.5)/(1-0.5)
-
             done = True
-        info = {'fidelity': f'{reward_}'}
-        reward = self.fidelity
+
+        info = {'fidelity': self.fidelity}
+
+        self.reward_old = log_reward
 
         return self.reshape_state(), reward, done, False, info
 
@@ -70,6 +72,7 @@ class SFQ(Env):
         self.state = self.initial_state.copy()
         self.index = 0
         self.fidelity = 0
+        self.reward_old = 0
         return self.reshape_state(), {}
 
 
